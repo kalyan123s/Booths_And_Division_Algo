@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booth's and Division Algorithms</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --text-color: #333;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+        
+        h2 {
+            color: var(--dark-color);
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        h3 {
+            color: var(--primary-color);
+            margin-top: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        input[type="number"] {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            transition: border-color 0.3s;
+            width: 200px;
+        }
+        
+        input[type="number"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: var(--box-shadow);
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button:nth-child(2) {
+            background-color: var(--secondary-color);
+        }
+        
+        button:nth-child(2):hover {
+            background-color: #27ae60;
+        }
+        
+        button:nth-child(3) {
+            background-color: var(--accent-color);
+        }
+        
+        button:nth-child(3):hover {
+            background-color: #c0392b;
+        }
+        
+        #result {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: var(--box-shadow);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        th {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e9f7fe;
+        }
+        
+        .step-highlight {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .action-cell {
+            font-weight: 500;
+        }
+        
+        .action-subtract {
+            color: var(--accent-color);
+        }
+        
+        .action-add {
+            color: var(--secondary-color);
+        }
+        
+        .action-shift {
+            color: #9b59b6;
+        }
+        
+        .action-initial {
+            color: var(--dark-color);
+        }
+        
+        @media (max-width: 768px) {
+            .input-group, .button-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input[type="number"] {
+                width: auto;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Binary Multiplication and Division</h2>
+        
+        <div class="input-group">
+            <input type="number" id="num1" placeholder="Enter number 1">
+            <input type="number" id="num2" placeholder="Enter number 2">
+        </div>
+        
+        <div class="button-group">
+            <button onclick="runBooths()">Run Booth's Algorithm</button>
+            <button onclick="runRestoringDivision()">Run Restoring Division</button>
+            <button onclick="runNonRestoringDivision()">Run Non-Restoring Division</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function getBitLength(num) {
+            let absNum = Math.abs(num);
+            if (absNum === 0) return 4;
+            let bitsNeeded = Math.ceil(Math.log2(absNum + 1));
+            return Math.max(4, Math.ceil(bitsNeeded / 4) * 4);
+        }
+        
+        function toBinary(num, bits) {
+            if (num < 0) num = (1 << bits) + num;
+            return num.toString(2).padStart(bits, '0').slice(-bits);
+        }
+        
+        function boothsAlgorithm(multiplicand, multiplier) {
+            let bits = Math.max(getBitLength(multiplicand), getBitLength(multiplier)) + 1;
+            bits = Math.max(bits, 5);
+            
+            let M = multiplicand;
+            let Q = multiplier;
+            let A = 0;
+            let Q_minus1 = 0;
+            
+            let steps = [];
+            steps.push({ 
+                Step: "Initial",
+                A: toBinary(A, bits), 
+                Q: toBinary(Q, bits), 
+                M: toBinary(M, bits), 
+                Q_minus1, 
+                Action: "Initial Values" 
+            });
+            
+            for (let i = 0; i < bits; i++) {
+                const lsb = Q & 1;
+                
+                if (lsb === 1 && Q_minus1 === 0) {
+                    A = A - M;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        M: toBinary(M, bits), 
+                        Q_minus1, 
+                        Action: "A = A - M" 
+                    });
+                } else if (lsb === 0 && Q_minus1 === 1) {
+                    A = A + M;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        M: toBinary(M, bits), 
+                        Q_minus1, 
+                        Action: "A = A + M" 
+                    });
+                }
+                
+                Q_minus1 = lsb;
+                let combined = (A << bits) | (Q & ((1 << bits) - 1));
+                
+                const isNegative = (A & (1 << (bits - 1))) !== 0;
+                combined = combined >> 1;
+                if (isNegative) {
+                    combined |= (1 << (2 * bits - 1));
+                }
+                
+                A = (combined >> bits) & ((1 << bits) - 1);
+                Q = combined & ((1 << bits) - 1);
+                
+                if (isNegative) {
+                    A |= ~((1 << bits) - 1);
+                }
+                
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    M: toBinary(M, bits), 
+                    Q_minus1, 
+                    Action: "Shift" 
+                });
+            }
+            
+            return steps;
+        }     
+        
+        function restoringDivision(dividend, divisor) {
+            // Determine if result should be negative
+            const resultNegative = (dividend < 0) !== (divisor < 0);
+            
+            // Work with absolute values for division
+            let absDividend = Math.abs(dividend);
+            let absDivisor = Math.abs(divisor);
+            
+            let bits = Math.max(getBitLength(absDividend), getBitLength(absDivisor));
+            let A = 0, Q = absDividend;
+            let steps = [];
+
+            steps.push({ 
+                Step: "Initial",
+                A: toBinary(A, bits), 
+                Q: toBinary(Q, bits), 
+                Action: "Initial Values" 
+            });
+
+            for (let i = 0; i < bits; i++) {
+                A = (A << 1) | ((Q & (1 << (bits - 1))) >> (bits - 1));
+                Q <<= 1;
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    Action: "Left Shift" 
+                });
+
+                A -= absDivisor;
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    Action: "A = A - D" 
+                });
+
+                if (A < 0) {
+                    Q &= ~(1 << 0);
+                    A += absDivisor;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        Action: "Restore A" 
+                    });
+                } else {
+                    Q |= 1;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        Action: "Set Q0 = 1" 
+                    });
+                }
+            }
+
+            // Add final result to steps
+            let quotient = Q & ((1 << bits) - 1);
+            if (resultNegative) quotient = -quotient;
+            
+            let remainder = A;
+            if (dividend < 0) remainder = -remainder;
+            
+            steps.push({
+                Step: "Final",
+                A: toBinary(remainder, bits),
+                Q: toBinary(quotient, bits),
+                Action: `Result: Quotient = ${quotient}, Remainder = ${remainder}`
+            });
+
+            return steps;
+        }
+
+        function nonRestoringDivision(dividend, divisor) {
+            // Determine if result should be negative
+            const resultNegative = (dividend < 0) !== (divisor < 0);
+            
+            // Work with absolute values for division
+            let absDividend = Math.abs(dividend);
+            let absDivisor = Math.abs(divisor);
+            
+            let bits = Math.max(getBitLength(absDividend), getBitLength(absDivisor));
+            let A = 0, Q = absDividend;
+            let steps = [];
+        
+            steps.push({ 
+                Step: "Initial",
+                A: toBinary(A, bits), 
+                Q: toBinary(Q, bits), 
+                Action: "Initial Values" 
+            });
+        
+            for (let i = 0; i < bits; i++) {
+                A = (A << 1) | ((Q & (1 << (bits - 1))) >> (bits - 1));
+                Q <<= 1;
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    Action: "Left Shift" 
+                });
+        
+                if (A >= 0) {
+                    A -= absDivisor;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        Action: "A = A - D" 
+                    });
+                } else {
+                    A += absDivisor;
+                    steps.push({ 
+                        A: toBinary(A, bits), 
+                        Q: toBinary(Q, bits), 
+                        Action: "A = A + D" 
+                    });
+                }
+        
+                Q |= (A >= 0) ? 1 : 0;
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    Action: "Set Q0" 
+                });
+            }
+        
+            // Final correction for negative remainder
+            if (A < 0) {
+                A += absDivisor;
+                steps.push({ 
+                    A: toBinary(A, bits), 
+                    Q: toBinary(Q, bits), 
+                    Action: "Final Correction: A = A + D" 
+                });
+            }
+            
+            // Add final result to steps
+            let quotient = Q & ((1 << bits) - 1);
+            if (resultNegative) quotient = -quotient;
+            
+            let remainder = A;
+            if (dividend < 0) remainder = -remainder;
+            
+            steps.push({
+                Step: "Final",
+                A: toBinary(remainder, bits),
+                Q: toBinary(quotient, bits),
+                Action: `Result: Quotient = ${quotient}, Remainder = ${remainder}`
+            });
+        
+            return steps;
+        }
+
+        function getActionClass(action) {
+            if (action.includes("-")) return "action-subtract";
+            if (action.includes("+")) return "action-add";
+            if (action.includes("Shift")) return "action-shift";
+            if (action.includes("Initial") || action.includes("Populate")) return "action-initial";
+            return "";
+        }
+
+        function displayResult(result, method, isMultiplication) {
+            let resultDiv = document.getElementById("result");
+            let tableHTML = `<h3>${method} Steps:</h3>
+                             <table>
+                                <tr>
+                                    <th>Step</th>
+                                    ${isMultiplication ? "<th>M</th>" : ""}
+                                    <th>A</th>
+                                    <th>Q</th>
+                                    ${isMultiplication ? "<th>Q(-1)</th>" : ""}
+                                    <th>Action</th>
+                                </tr>`;
+
+            result.forEach((step, index) => {
+                let actionClass = getActionClass(step.Action);
+                tableHTML += `<tr>
+                                <td class="step-highlight">${index}</td>
+                                ${isMultiplication ? `<td>${step.M || ""}</td>` : ""}
+                                <td>${step.A}</td>
+                                <td>${step.Q}</td>
+                                ${isMultiplication ? `<td>${step.Q_minus1 !== undefined ? step.Q_minus1 : ""}</td>` : ""}
+                                <td class="action-cell ${actionClass}">${step.Action}</td>
+                              </tr>`;
+            });
+
+            tableHTML += '</table>';
+            resultDiv.innerHTML = tableHTML;
+        }
+
+        function runBooths() {
+            displayResult(boothsAlgorithm(
+                parseInt(document.getElementById('num1').value),
+                parseInt(document.getElementById('num2').value)
+            ), "Booth's Algorithm", true);
+        }
+
+        function runRestoringDivision() {
+            displayResult(restoringDivision(
+                parseInt(document.getElementById('num1').value),
+                parseInt(document.getElementById('num2').value)
+            ), "Restoring Division", false);
+        }
+
+        function runNonRestoringDivision() {
+            displayResult(nonRestoringDivision(
+                parseInt(document.getElementById('num1').value),
+                parseInt(document.getElementById('num2').value)
+            ), "Non-Restoring Division", false);
+        }
+    </script>
+</body>
+</html>
